@@ -21,6 +21,8 @@ import sys
 from pathlib import Path
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
+sys.path.insert(0, str(SRC_DIR))
+from common.config import load_config
 
 
 def run(cmd):
@@ -34,23 +36,36 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("video")
     ap.add_argument("--target", required=True)
-    ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--out-dir", default=None,
+                     help="省略時は configs/targets/<target>.yaml の out_dir 配下に "
+                          "<out_dir>/<動画名>/ を作る")
     ap.add_argument("--models-json", default=None,
                      help="stage4_fit_score_model.py出力。指定時のみStage4 applyまで実行する")
     ap.add_argument("--method", default="logistic_regression",
                      choices=["yolo_only", "clip_only", "sum", "logistic_regression"])
     ap.add_argument("--videos-dir", default=None,
-                     help="--auto-screening使用時、Stage6のffmpeg入力を解決するために必要")
+                     help="--auto-screening使用時、Stage6のffmpeg入力を解決するために必要。"
+                          "省略時はconfigのvideos_dirを使う")
     ap.add_argument("--auto-screening", action="store_true",
                      help="Stage5(人間目視)をstage5_auto_screening.pyに差し替え、Stage6まで自動実行する")
     ap.add_argument("--limit-seconds", type=float, default=None)
     args = ap.parse_args()
 
-    if args.auto_screening and (not args.models_json or not args.videos_dir):
-        print("ERROR: --auto-screening には --models-json と --videos-dir の両方が必要", file=sys.stderr)
+    cfg = load_config(args.target)
+    videos_dir = args.videos_dir or cfg.get("videos_dir")
+
+    if args.auto_screening and (not args.models_json or not videos_dir):
+        print("ERROR: --auto-screening には models-json と videos_dir(CLIまたはconfig)の両方が必要",
+              file=sys.stderr)
         sys.exit(1)
 
-    out_dir = Path(args.out_dir)
+    if args.out_dir:
+        out_dir = Path(args.out_dir)
+    elif cfg.get("out_dir"):
+        out_dir = Path(cfg["out_dir"]) / Path(args.video).stem
+    else:
+        print("ERROR: --out-dir が未指定で、configにもout_dirがありません", file=sys.stderr)
+        sys.exit(1)
     out_dir.mkdir(parents=True, exist_ok=True)
     limit = ["--limit-seconds", str(args.limit_seconds)] if args.limit_seconds else []
 
@@ -89,7 +104,7 @@ def main():
 
     merged_json = out_dir / "merged.json"
     run([sys.executable, SRC_DIR / "stage6_merge_bins.py",
-         "--screening-csv", screening_csv, "--videos-dir", args.videos_dir,
+         "--screening-csv", screening_csv, "--videos-dir", videos_dir,
          "--target", args.target, "--out-json", merged_json])
 
     run([sys.executable, SRC_DIR / "stage6_make_clips.py",

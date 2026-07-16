@@ -1,8 +1,19 @@
-# 対象別設定。ここに置いてよいのはCLAUDE.mdの3点（+ モデルパス等の対象固有パス情報）のみ。
+# 「対象(species)ごとの設定」であると同時に、実質的には「解析ジョブごとの設定」として使う。
+# 新しい動画セットを解析するときは、このファイルをコピーして名前を変え（例: bombus_heranaren.yaml）、
+# videos_dir/out_dirを新しい値に書き換えて --target <新しい名前> で実行するのが基本の使い方。
+# 同じ昆虫種を対象にするならモデル・プロンプト類はそのまま使い回せる（今回のヘラナレン実行が実例）。
+#
+# ここに置いてよいのはCLAUDE.mdの3点（VLM探索対象文字列・CLIP文言・動体サイズ範囲）+
+# モデルパス等の対象固有パス情報 + このジョブの入出力ディレクトリ。
 # 数値パラメータ（bin_sec, yolo_conf_threshold 等）は configs/pipeline.yaml 側の共通既定値を使う。
 
 target: bombus
 
+# --- このジョブの入出力（コピーしたら必ず書き換える） ---
+videos_dir: null   # 解析対象のmp4が入っているディレクトリ（例: /Volumes/HDD_Iris/.../20231111_平島ヘラナレン3）
+out_dir: null      # Stage1-3の出力先ベースディレクトリ（動画ごとに out_dir/<動画名>/ が作られる）
+
+# --- 対象(species)固有の設定 ---
 # YOLOモデル（20260331_bombusDetectTest実績モデル）
 yolo_model_path: /Users/ktak0119/Documents/20260331_bombusDetectTest/withNegative_val/withNegative_best.pt
 
@@ -12,6 +23,7 @@ clip_prompt_key: bombus
 # Stage3(optional)/Stage5表示用の探索対象文字列
 vlm_search_target: "マルハナバチ"
 
-# Stage1: MOG2の動体サイズ範囲（対象ごとに変えてよい3点目。未キャリブレーション時の暫定値）
+# Stage1: MOG2の動体サイズ範囲（対象ごとに変えてよい3点目。未キャリブレーション時の暫定値。
+# 小さい訪花者を拾いたい場合はここを下げる。手順はdocs/motion_size_tuning.md参照）
 motion_min_area: 100
 motion_max_area: 25000

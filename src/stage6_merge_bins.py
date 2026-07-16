@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--screening-csv", required=True, help="Stage5出力（screening列にTP/FP）")
-    p.add_argument("--videos-dir", required=True)
+    p.add_argument("--videos-dir", default=None, help="省略時はconfigのvideos_dirを使う")
     p.add_argument("--target", required=True)
     p.add_argument("--out-json", required=True)
     return p.parse_args()
@@ -32,7 +32,11 @@ def resolve_video_path(videos_dir: Path, video: str) -> str:
 def main():
     args = parse_args()
     cfg = load_config(args.target)
-    videos_dir = Path(args.videos_dir)
+    videos_dir_str = args.videos_dir or cfg.get("videos_dir")
+    if not videos_dir_str:
+        print("ERROR: --videos-dir が未指定で、configにもvideos_dirがありません", file=sys.stderr)
+        sys.exit(1)
+    videos_dir = Path(videos_dir_str)
 
     import csv
     with open(args.screening_csv, newline="", encoding="utf-8-sig") as f:

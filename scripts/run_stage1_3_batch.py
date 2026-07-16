@@ -15,6 +15,8 @@ import time
 from pathlib import Path
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
+sys.path.insert(0, str(SRC_DIR))
+from common.config import load_config
 
 
 def run(cmd):
@@ -41,13 +43,23 @@ def process_one(video: Path, target: str, out_dir: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--videos-dir", required=True, help="mp4が入っているディレクトリ（非再帰）")
     ap.add_argument("--target", required=True)
-    ap.add_argument("--out-dir", required=True, help="動画ごとに <out-dir>/<動画名>/ を作る")
+    ap.add_argument("--videos-dir", default=None,
+                     help="mp4が入っているディレクトリ（非再帰）。省略時はconfigのvideos_dirを使う")
+    ap.add_argument("--out-dir", default=None,
+                     help="動画ごとに <out-dir>/<動画名>/ を作る。省略時はconfigのout_dirを使う")
     args = ap.parse_args()
 
-    videos_dir = Path(args.videos_dir)
-    out_dir = Path(args.out_dir)
+    cfg = load_config(args.target)
+    videos_dir_str = args.videos_dir or cfg.get("videos_dir")
+    out_dir_str = args.out_dir or cfg.get("out_dir")
+    if not videos_dir_str or not out_dir_str:
+        print(f"ERROR: videos_dir/out_dir が未指定です。--videos-dir/--out-dir で渡すか、"
+              f"configs/targets/{args.target}.yaml のvideos_dir/out_dirを設定してください", file=sys.stderr)
+        sys.exit(1)
+
+    videos_dir = Path(videos_dir_str)
+    out_dir = Path(out_dir_str)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     videos = sorted(videos_dir.glob("*.mp4"))

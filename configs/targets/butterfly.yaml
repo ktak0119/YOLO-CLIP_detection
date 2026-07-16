@@ -1,8 +1,18 @@
-# 対象別設定。ここに置いてよいのはCLAUDE.mdの3点（+ モデルパス等の対象固有パス情報）のみ。
+# 「対象(species)ごとの設定」であると同時に、実質的には「解析ジョブごとの設定」として使う。
+# 新しい動画セットを解析するときは、このファイルをコピーして名前を変え、
+# videos_dir/out_dirを新しい値に書き換えて --target <新しい名前> で実行するのが基本の使い方。
+#
+# ここに置いてよいのはCLAUDE.mdの3点（VLM探索対象文字列・CLIP文言・動体サイズ範囲）+
+# モデルパス等の対象固有パス情報 + このジョブの入出力ディレクトリ。
 # 数値パラメータ（bin_sec, yolo_conf_threshold 等）は configs/pipeline.yaml 側の共通既定値を使う。
 
 target: butterfly
 
+# --- このジョブの入出力（コピーしたら必ず書き換える） ---
+videos_dir: null
+out_dir: null
+
+# --- 対象(species)固有の設定 ---
 # YOLOモデル（20260619_ButterflyDetect実績モデル、config.example.jsonの規定パターンに合わせnを既定）
 yolo_model_path: /Users/ktak0119/Documents/20260619_ButterflyDetect/models/butterfly/yolov8n_best.pt
 
