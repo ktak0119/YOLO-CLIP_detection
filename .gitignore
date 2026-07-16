@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.DS_Store
+*.egg-info/
+.venv/
+venv/
+
+# 実行時に生成される大容量成果物はコミットしない
+runs/
+out/
+*.mp4
+crops/
+*.jpg
+*.jpeg
+!docs/**/*.jpg
+
+# ローカル動画・モデルパスは configs/targets/*.yaml で外部パス参照する運用のためコミット不要

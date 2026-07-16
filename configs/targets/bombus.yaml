@@ -1,0 +1,17 @@
+# 対象別設定。ここに置いてよいのはCLAUDE.mdの3点（+ モデルパス等の対象固有パス情報）のみ。
+# 数値パラメータ（bin_sec, yolo_conf_threshold 等）は configs/pipeline.yaml 側の共通既定値を使う。
+
+target: bombus
+
+# YOLOモデル（20260331_bombusDetectTest実績モデル）
+yolo_model_path: /Users/ktak0119/Documents/20260331_bombusDetectTest/withNegative_val/withNegative_best.pt
+
+# Stage3: CLIPプロンプトセットのキー（aggregate_classify.py の PROMPT_SETS を移植したものに対応）
+clip_prompt_key: bombus
+
+# Stage3(optional)/Stage5表示用の探索対象文字列
+vlm_search_target: "マルハナバチ"
+
+# Stage1: MOG2の動体サイズ範囲（対象ごとに変えてよい3点目。未キャリブレーション時の暫定値）
+motion_min_area: 100
+motion_max_area: 25000

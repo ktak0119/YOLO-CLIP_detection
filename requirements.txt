@@ -1,0 +1,7 @@
+opencv-python
+numpy
+pyyaml
+torch
+ultralytics
+open_clip_torch
+pillow
