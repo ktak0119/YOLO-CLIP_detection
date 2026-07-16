@@ -37,9 +37,3 @@ eval/                # 検証用ハーネス（現時点ではプレースホル
 scripts/             # end-to-endオーケストレーション
 tests/
 ```
-
-## 元になった資料
-
-- `/Users/ktak0119/Documents/20260709_InsectVisitPipeline/PLAN.md` — 方針決定の経緯
-- `/Users/ktak0119/Documents/2026624_ClaudeDetection/work/` — Stage1/3/5/6の元になった既存資産
-- `/Users/ktak0119/Documents/20260331_bombusDetectTest/` — YOLOモデル・Stage5レビューツールの元
