@@ -27,6 +27,8 @@ Stage6  ビン結合（同時間帯・隣接ビンの機械的マージ）→ク
 2. CLIPゼロショットの文言（プロンプトセット）
 3. MOG2の動体サイズ範囲（min_area/max_area）
 
+動体サイズ範囲のチューニング手順は [docs/motion_size_tuning.md](docs/motion_size_tuning.md) を参照。
+
 ## ディレクトリ構成
 
 ```
