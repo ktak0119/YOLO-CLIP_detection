@@ -35,3 +35,9 @@ def load_config(target: str) -> dict:
     cfg = {**pipeline_cfg, **target_cfg}
     cfg["target"] = target
     return cfg
+
+
+def default_out_dir(target: str) -> Path:
+    """out_dirがCLIにもconfigにも指定されなかった場合のフォールバック先。
+    リポジトリ内の output/<target>/ 配下（.gitignore対象）。"""
+    return REPO_ROOT / "output" / target

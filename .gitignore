@@ -8,6 +8,7 @@ venv/
 # 実行時に生成される大容量成果物はコミットしない
 runs/
 out/
+output/
 *.mp4
 crops/
 *.jpg

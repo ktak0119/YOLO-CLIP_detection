@@ -22,7 +22,7 @@ from pathlib import Path
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SRC_DIR))
-from common.config import load_config
+from common.config import default_out_dir, load_config
 
 
 def run(cmd):
@@ -59,14 +59,10 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    if args.out_dir:
-        out_dir = Path(args.out_dir)
-    elif cfg.get("out_dir"):
-        out_dir = Path(cfg["out_dir"]) / Path(args.video).stem
-    else:
-        print("ERROR: --out-dir が未指定で、configにもout_dirがありません", file=sys.stderr)
-        sys.exit(1)
+    base_out_dir = Path(args.out_dir) if args.out_dir else Path(cfg.get("out_dir") or default_out_dir(args.target))
+    out_dir = base_out_dir if args.out_dir else base_out_dir / Path(args.video).stem
     out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"out_dir: {out_dir}")
     limit = ["--limit-seconds", str(args.limit_seconds)] if args.limit_seconds else []
 
     stage1_json = out_dir / "stage1.json"

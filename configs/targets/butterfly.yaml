@@ -9,8 +9,8 @@
 target: butterfly
 
 # --- このジョブの入出力（コピーしたら必ず書き換える） ---
-videos_dir: null
-out_dir: null
+videos_dir: null   # 解析対象のmp4が入っているディレクトリ。必須
+out_dir: null      # nullのままなら自動で output/<target>/ 配下に出力される（.gitignore対象）
 
 # --- 対象(species)固有の設定 ---
 # YOLOモデル（20260619_ButterflyDetect実績モデル、config.example.jsonの規定パターンに合わせnを既定）

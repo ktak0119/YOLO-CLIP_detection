@@ -10,8 +10,9 @@
 target: bombus
 
 # --- このジョブの入出力（コピーしたら必ず書き換える） ---
-videos_dir: null   # 解析対象のmp4が入っているディレクトリ（例: /Volumes/HDD_Iris/.../20231111_平島ヘラナレン3）
-out_dir: null      # Stage1-3の出力先ベースディレクトリ（動画ごとに out_dir/<動画名>/ が作られる）
+videos_dir: null   # 解析対象のmp4が入っているディレクトリ（例: /Volumes/HDD_Iris/.../20231111_平島ヘラナレン3）。必須
+out_dir: null      # Stage1-3の出力先ベースディレクトリ（動画ごとに out_dir/<動画名>/ が作られる）。
+                    # nullのままなら自動で output/<target>/ 配下に出力される（.gitignore対象）
 
 # --- 対象(species)固有の設定 ---
 # YOLOモデル（20260331_bombusDetectTest実績モデル）
