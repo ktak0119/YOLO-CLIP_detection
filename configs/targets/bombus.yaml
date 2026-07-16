@@ -1,30 +1,79 @@
-# 「対象(species)ごとの設定」であると同時に、実質的には「解析ジョブごとの設定」として使う。
-# 新しい動画セットを解析するときは、このファイルをコピーして名前を変え（例: bombus_heranaren.yaml）、
-# videos_dir/out_dirを新しい値に書き換えて --target <新しい名前> で実行するのが基本の使い方。
-# 同じ昆虫種を対象にするならモデル・プロンプト類はそのまま使い回せる（今回のヘラナレン実行が実例）。
-#
-# ここに置いてよいのはCLAUDE.mdの3点（VLM探索対象文字列・CLIP文言・動体サイズ範囲）+
-# モデルパス等の対象固有パス情報 + このジョブの入出力ディレクトリ。
-# 数値パラメータ（bin_sec, yolo_conf_threshold 等）は configs/pipeline.yaml 側の共通既定値を使う。
+# configs/job_template.yaml をコピーして作った、bombus(マルハナバチ)用のジョブ設定。
+# 新しいジョブを作るときは、このファイルではなく configs/job_template.yaml をコピーすること。
+# 同じマルハナバチを対象にした別動画セットなら、このファイルのセクション2はそのまま流用してよい
+# （実例: このモデルを別の花・別撮影地(ヘラナレン)の動画にもそのまま適用した）。
+
+
+# ============================================================
+# セクション1: このジョブ固有の情報（★ 毎回必ず書き換える）
+# ============================================================
 
 target: bombus
 
-# --- このジョブの入出力（コピーしたら必ず書き換える） ---
-videos_dir: null   # 解析対象のmp4が入っているディレクトリ（例: /Volumes/HDD_Iris/.../20231111_平島ヘラナレン3）。必須
-out_dir: null      # Stage1-3の出力先ベースディレクトリ（動画ごとに out_dir/<動画名>/ が作られる）。
-                    # nullのままなら自動で output/<target>/ 配下に出力される（.gitignore対象）
+videos_dir: null   # 解析対象のmp4が入っているディレクトリ。必須
+out_dir: null        # nullのままなら自動で output/bombus/ になる
 
-# --- 対象(species)固有の設定 ---
+
+# ============================================================
+# セクション2: 対象昆虫ごとの設定（★ 昆虫種が変わるときだけ書き換える）
+# ============================================================
+
 # YOLOモデル（20260331_bombusDetectTest実績モデル）
 yolo_model_path: /Users/ktak0119/Documents/20260331_bombusDetectTest/withNegative_val/withNegative_best.pt
 
-# Stage3: CLIPプロンプトセットのキー（aggregate_classify.py の PROMPT_SETS を移植したものに対応）
-clip_prompt_key: bombus
-
-# Stage3(optional)/Stage5表示用の探索対象文字列
 vlm_search_target: "マルハナバチ"
 
-# Stage1: MOG2の動体サイズ範囲（対象ごとに変えてよい3点目。未キャリブレーション時の暫定値。
-# 小さい訪花者を拾いたい場合はここを下げる。手順はdocs/motion_size_tuning.md参照）
+clip_pos_prompts:
+  - "a photo of a bumblebee on a flower"
+  - "a bumblebee resting on a flower in a garden"
+  - "a close-up of a fuzzy bumblebee foraging on a flower"
+  - "a bee or bumblebee insect feeding on a flower"
+clip_neg_prompts:
+  - "a photo of grass and leaves blowing in the wind"
+  - "a blurry photo of a flower with no insect"
+  - "an empty garden scene with plants"
+  - "a photo of bright sky glare through leaves"
+  - "a photo of a spider or small bug on a leaf"
+  - "a security camera photo of a plant stem with no animal"
+  # bombus特有のnegativeは未検証（butterfly由来の汎用negativeのみ）。実データで偽陽性を
+  # 確認したら、その見た目を言語化した文をここに追加する（書き方はjob_template.yaml参照）
+
+# 未キャリブレーション時の暫定値。小さい訪花者を拾いたい場合は下げる（docs/motion_size_tuning.md参照）
 motion_min_area: 100
 motion_max_area: 25000
+
+
+# ============================================================
+# セクション3: パイプライン共通パラメータ（★ 通常は触らない）
+# ============================================================
+
+bin_sec: 5.0
+
+mog2_enabled: true
+mog2_history: 300
+mog2_var_threshold: 24
+mog2_learning_rate: -1
+mog2_warmup_frames: 15
+mog2_mask_top_frac: 0.10
+
+yolo_conf_threshold: 0.30
+top_k_per_bin: 1
+yolo_batch_size: 24
+tight_crop_pad_frac: 0.12
+tight_crop_pad_min_px: 5
+
+clip_model: "ViT-B-32"
+clip_pretrained: "openai"
+clip_apply_cutoff: false
+
+target_recall: 0.95
+score_fusion_methods:
+  - yolo_only
+  - clip_only
+  - sum
+  - logistic_regression
+
+clip_pad_sec: 2.0
+merge_gap_sec: 4.0
+
+resume: true

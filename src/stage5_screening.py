@@ -24,8 +24,14 @@ OUTPUT_FIELDS = ["video", "bin_id", "start_sec", "end_sec", "crop_path", "screen
 
 
 def load_bins(bin_table_csv: Path):
+    """スコア（combined_score優先、無ければclip_score）の降順に並べ替えて返す。
+    Stage4を経由していない入力（stage4_build_bin_table.py出力をそのまま渡す等）でも、
+    別途ソートする手間なくスコア上位から目視できるようにするため（仕様書§4）。"""
     with open(bin_table_csv, encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+    score_col = "combined_score" if rows and "combined_score" in rows[0] else "clip_score"
+    rows.sort(key=lambda r: -(float(r[score_col]) if r.get(score_col) not in (None, "") else -1))
+    return rows
 
 
 def save_results(output_path: Path, results):

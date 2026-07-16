@@ -22,48 +22,9 @@ from common.provenance import should_skip, write_run_manifest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# 対象ごとに変えてよい3点のうちの1つ（CLIP文言）。aggregate_classify.pyのPROMPT_SETSを移植。
-# "butterfly"のnegativeにはコオニユリの花誤認対策が含まれる（対象固有、他対象には転用しない）。
-# "bombus"は現時点でbutterfly由来の汎用negativeのみ、bombus特有のnegativeは未検証（実データで
-# 偽陽性を確認してから追加する）。
-PROMPT_SETS = {
-    "butterfly": {
-        "pos": [
-            "a photo of a butterfly on a flower",
-            "a butterfly resting on a flower in a garden",
-            "a close-up of a butterfly with open wings on a flower",
-            "a moth or butterfly insect feeding on a flower",
-        ],
-        "neg": [
-            "a photo of grass and leaves blowing in the wind",
-            "a blurry photo of a flower with no insect",
-            "an empty garden scene with plants",
-            "a photo of bright sky glare through leaves",
-            "a photo of a spider or small bug on a leaf",
-            "a security camera photo of a plant stem with no animal",
-            "a macro photo of an orange tiger lily petal with dark red-brown spots, no insect",
-            "a curled-back lily flower petal that looks like a wing but is just a petal",
-            "an orange Lilium flower with spotted petals and recurved curled edges, no butterfly",
-            "a close-up of speckled flower petal texture, not an animal",
-        ],
-    },
-    "bombus": {
-        "pos": [
-            "a photo of a bumblebee on a flower",
-            "a bumblebee resting on a flower in a garden",
-            "a close-up of a fuzzy bumblebee foraging on a flower",
-            "a bee or bumblebee insect feeding on a flower",
-        ],
-        "neg": [
-            "a photo of grass and leaves blowing in the wind",
-            "a blurry photo of a flower with no insect",
-            "an empty garden scene with plants",
-            "a photo of bright sky glare through leaves",
-            "a photo of a spider or small bug on a leaf",
-            "a security camera photo of a plant stem with no animal",
-        ],
-    },
-}
+# CLIPのpos/negプロンプトはPythonコードでなくジョブconfig(clip_pos_prompts/clip_neg_prompts)
+# 側に置く（対象ごとに変えてよい項目をジョブyaml1ファイルで完結させるため）。
+# 書き方のガイドはconfigs/job_template.yamlのコメント参照。
 
 
 def parse_args():
@@ -99,8 +60,7 @@ def main():
     tokenizer = open_clip.get_tokenizer(cfg["clip_model"])
     model = model.to(device).eval()
 
-    prompt_set = PROMPT_SETS[cfg["clip_prompt_key"]]
-    pos_prompts, neg_prompts = prompt_set["pos"], prompt_set["neg"]
+    pos_prompts, neg_prompts = cfg["clip_pos_prompts"], cfg["clip_neg_prompts"]
     prompts = pos_prompts + neg_prompts
     n_pos = len(pos_prompts)
     with torch.no_grad():
@@ -138,7 +98,7 @@ def main():
         writer.writerows(rows)
 
     write_run_manifest(out_csv.parent, cfg, REPO_ROOT, extra={"stage": "stage3_clip_score", "in_csv": args.in_csv})
-    print(f"scored {len(rows)} crops (target={cfg['clip_prompt_key']}) -> {out_csv}")
+    print(f"scored {len(rows)} crops (target={cfg['target']}) -> {out_csv}")
 
 
 if __name__ == "__main__":

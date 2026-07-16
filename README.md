@@ -21,23 +21,20 @@ Stage5  人間目視フィルタリング
 Stage6  ビン結合（同時間帯・隣接ビンの機械的マージ）→クリップ動画出力
 ```
 
-各ステージ間の受け渡しはJSON/CSV。設定は`configs/pipeline.yaml`（全対象共通の既定値）と
-`configs/targets/*.yaml`（対象ごとに変えてよい項目のみ）に分離している。
-
-対象ごとに変えてよいのは次の3点のみ（それ以外の数値パラメータは対象非依存の共通値を使う）:
-1. VLMプロンプトの探索対象文字列
-2. CLIPゼロショットの文言（プロンプトセット）
-3. MOG2の動体サイズ範囲（min_area/max_area）
-
-動体サイズ範囲のチューニング手順は [docs/motion_size_tuning.md](docs/motion_size_tuning.md) を参照。
+各ステージ間の受け渡しはJSON/CSV。設定は1ジョブ（1回の動画セットの解析）につき1つの
+yamlファイル（`configs/targets/<ジョブ名>.yaml`、`configs/job_template.yaml`をコピーして作る）
+にまとまっている。詳細・全パラメータの意味・実行コマンドは [docs/RUN_GUIDE.md](docs/RUN_GUIDE.md) 参照。
 
 ## ディレクトリ構成
 
 ```
-configs/            # pipeline.yaml（共通既定値）+ targets/*.yaml（対象別設定）
+configs/
+  job_template.yaml    # 新規ジョブ作成の起点
+  targets/<job>.yaml     # 実際に使うジョブ設定（--target <job> で読み込まれる）
 data/labels/<target>/bin_labels.csv   # 人間確認済みビンラベル（ユーザーが配置。スキーマのみ用意）
 src/                 # ステージ別スクリプト（src/直下にフラットに配置）
 eval/                # 検証用ハーネス（現時点ではプレースホルダー）
 scripts/             # end-to-endオーケストレーション
+output/               # 既定の出力先（.gitignore対象）
 tests/
 ```

@@ -1,0 +1,106 @@
+# ============================================================
+# ジョブ設定テンプレート
+# 新しい動画セットを解析するときは、このファイルを configs/targets/<ジョブ名>.yaml に
+# コピーして、以下の3セクションのうち上の2つだけ書き換える。3つ目は基本触らない。
+#
+#   cp configs/job_template.yaml configs/targets/<ジョブ名>.yaml
+#
+# 実行時は --target <ジョブ名> でこのファイル1つが読み込まれる（他のyamlとのマージはしない）。
+# ============================================================
+
+
+# ============================================================
+# セクション1: このジョブ固有の情報（★ 毎回必ず書き換える）
+# ============================================================
+
+target: my_job   # ジョブ名。--target に渡す文字列と一致させる（ファイル名とも合わせるとわかりやすい）
+
+videos_dir: null   # 解析対象のmp4が入っているディレクトリ。必須（例: /Volumes/HDD_Iris/.../20231111_平島ヘラナレン3）
+out_dir: null       # 出力先ベースディレクトリ。null のままなら自動で output/<target>/ になる（.gitignore対象、通常はこれでよい）
+
+
+# ============================================================
+# セクション2: 対象昆虫ごとの設定（★ 昆虫種が変わるときだけ書き換える）
+# 同じ昆虫を対象にした別の動画セットなら、このセクションは既存ジョブからそのままコピーしてよい
+# （例: bombusモデルを別の花の動画に使う場合、このセクションは変更不要）。
+# ============================================================
+
+# YOLOモデルの.ptファイルパス。対象昆虫を検出できるよう学習済みのモデルを指定する
+yolo_model_path: /path/to/model.pt
+
+# Stage5のレビュー画面等に表示される「何を探しているか」の文字列（人間が読むためのラベル、動作には影響しない）
+vlm_search_target: "対象昆虫名"
+
+# Stage3(CLIP)に渡すゼロショット分類の文言。
+# 「pos」= 対象が写っている状態を表す文（複数、言い回しを変えて数文用意する）
+# 「neg」= 対象ではないもの・誤検知しやすいものを表す文（複数）
+#
+# 書き方のコツ:
+#   - 英語で、"a photo of ..." のような単純な説明文にする（CLIPは英語の自然文で学習されている）
+#   - posは「対象が花に来ている/止まっている/給餌している」など複数の状況・角度を混ぜる
+#   - negは「風で揺れる葉」「ボケた花だけの写真」「グレア（光の反射）」「別の小さい虫やクモ」など
+#     実際に誤検知しやすいものを具体的に列挙する
+#   - 実際にStage3を回してみて、スコアが高いのに間違っている画像（偽陽性）が見つかったら、
+#     その画像の見た目を言葉で説明した文をnegに追加する（例: 特定の花びらの模様が虫の羽に
+#     見えて誤検知していた場合、「curled orange petal with dark spots, no insect」のように
+#     見た目そのものを言語化して追加すると効果的。実例はbombus.yaml/butterfly.yamlのneg参照）
+clip_pos_prompts:
+  - "a photo of the target insect on a flower"
+  - "the target insect resting on a flower in a garden"
+  - "a close-up of the target insect feeding on a flower"
+clip_neg_prompts:
+  - "a photo of grass and leaves blowing in the wind"
+  - "a blurry photo of a flower with no insect"
+  - "an empty garden scene with plants"
+  - "a photo of bright sky glare through leaves"
+  - "a photo of a spider or small bug on a leaf"
+  - "a security camera photo of a plant stem with no animal"
+
+# Stage1(MOG2)が拾う動体の面積範囲（ピクセル²、640px幅リサイズ後基準）。
+# 対象昆虫のサイズに応じて調整する。小さい昆虫を拾いたいならmotion_min_areaを下げる。
+# キャリブレーション手順は docs/motion_size_tuning.md 参照
+motion_min_area: 100
+motion_max_area: 25000
+
+
+# ============================================================
+# セクション3: パイプライン共通パラメータ（★ 通常は触らない）
+# 全ジョブで基本共通の既定値。動きが怪しい・レビュー量を調整したい等の理由がない限り変更不要
+# ============================================================
+
+bin_sec: 5.0                    # 固定ビン長（秒）
+
+# Stage1 (MOG2)
+mog2_enabled: true               # false にするとStage1を使わずStage2が全フレームに直接YOLOをかける
+mog2_history: 300                 # MOG2背景モデルの学習フレーム数
+mog2_var_threshold: 24             # MOG2の前景/背景判定の感度
+mog2_learning_rate: -1              # -1=自動。対象が長時間静止する場合、背景に吸収されやすいので下げることを検討
+mog2_warmup_frames: 15               # 動画冒頭、背景モデル安定化のため候補を出さないフレーム数
+mog2_mask_top_frac: 0.10              # 画面上部の何割を検知対象から除外するか（空・タイムスタンプ等除外用）
+
+# Stage2 (YOLO + ビン代表抽出)
+yolo_conf_threshold: 0.30        # YOLO検知の信頼度閾値（1フレーム最大1件のbest boxを採用）
+top_k_per_bin: 1                  # 1ビンあたり代表クロップを何枚残すか（K）
+yolo_batch_size: 24                 # YOLOバッチ推論のバッチサイズ
+tight_crop_pad_frac: 0.12            # クロップ余白の割合（YOLOボックス基準）
+tight_crop_pad_min_px: 5               # クロップ余白の最小ピクセル数
+
+# Stage3 (CLIP)
+clip_model: "ViT-B-32"            # 使用するCLIPモデル
+clip_pretrained: "openai"          # 学習済み重みの種類
+clip_apply_cutoff: false            # Stage3では足切りしない（スコア付与のみ、仕様上false固定）
+
+# Stage4 (スコア統合、任意)
+target_recall: 0.95                 # 閾値決定用データで狙うRecall
+score_fusion_methods:                # 比較する4方式
+  - yolo_only
+  - clip_only
+  - sum
+  - logistic_regression
+
+# Stage6 (ビン結合・クリップ出力)
+clip_pad_sec: 2.0                     # クリップ前後に足すパディング秒数
+merge_gap_sec: 4.0                     # 隣接ビンをマージする間隔しきい値（pad_secの2倍が目安）
+
+# 共通
+resume: true                            # 既存出力があればスキップ/再開する
